@@ -1,4 +1,4 @@
-from atproto import FirehoseSubscribeReposClient, parse_subscribe_repos_message, models, CAR, IdResolver, DidInMemoryCache
+from atproto import FirehoseSubscribeReposClient, parse_subscribe_repos_message, CAR, IdResolver, DidInMemoryCache
 import json
 import time
 
