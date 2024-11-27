@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "bsky-scraper"
+version = "0.1.0"
+description = ""
+authors = ["deepfates <deepfates@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+atproto = "^0.0.55"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
