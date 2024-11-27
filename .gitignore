@@ -162,4 +162,4 @@ cython_debug/
 #.idea/
 
 # Project files
-bluesky_posts.jsonl
+bluesky_posts_*.jsonl

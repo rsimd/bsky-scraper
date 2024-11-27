@@ -1,15 +1,18 @@
 from atproto import FirehoseSubscribeReposClient, parse_subscribe_repos_message, CAR, IdResolver, DidInMemoryCache
 import json
 import time
+import argparse
+from datetime import datetime
 
 class FirehoseScraper:
-    def __init__(self, output_file="bluesky_posts.jsonl"):
+    def __init__(self, output_file="bluesky_posts.jsonl", verbose=False):
         self.client = FirehoseSubscribeReposClient()
         self.output_file = output_file
         self.post_count = 0
         self.start_time = None
         self.cache = DidInMemoryCache() 
         self.resolver = IdResolver(cache=self.cache)
+        self.verbose = verbose
         
         
     def process_message(self, message) -> None:
@@ -79,16 +82,25 @@ class FirehoseScraper:
             json.dump(post_data, f)
             f.write('\n')
         self.post_count += 1
-        # print(f"Saved post by @{post_data['author']}: {post_data['text'][:50]}...")
+        if self.verbose:
+            print(f"Saved post by @{post_data['author']}: {post_data['text'][:50]}...")
 
-    def start_collection(self, duration_seconds=30):
-        """Start collecting posts for the specified duration"""
-        print(f"Starting collection for {duration_seconds} seconds...")
+    def start_collection(self, duration_seconds=None, post_limit=None):
+        """Start collecting posts until duration or post limit is reached"""
+        if duration_seconds:
+            print(f"Starting collection for {duration_seconds} seconds...")
+        elif post_limit:
+            print(f"Starting collection for {post_limit} posts...")
+        else:
+            print("Starting unlimited collection (Ctrl+C to stop)...")
+            
         self.start_time = time.time()
-        end_time = self.start_time + duration_seconds
+        end_time = self.start_time + duration_seconds if duration_seconds else None
 
         def message_handler(message):
-            if time.time() > end_time:
+            if duration_seconds and time.time() > end_time:
+                self._stop_collection()
+            elif post_limit and self.post_count >= post_limit:
                 self._stop_collection()
             else:
                 self.process_message(message)
@@ -103,12 +115,24 @@ class FirehoseScraper:
         """Stop the collection and print summary"""
         elapsed = time.time() - self.start_time
         rate = self.post_count / elapsed if elapsed > 0 else 0
-        print(f"\nCollection complete!")
+        print("\nCollection complete!")
         print(f"Collected {self.post_count} posts in {elapsed:.2f} seconds")
         print(f"Average rate: {rate:.1f} posts/sec")
         print(f"Output saved to: {self.output_file}")
         self.client.stop()
 
 if __name__ == "__main__":
-    archiver = FirehoseScraper()
-    archiver.start_collection(duration_seconds=30)
+    parser = argparse.ArgumentParser(description='Collect posts from the Bluesky firehose')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-t', '--time', type=int, help='Collection duration in seconds')
+    group.add_argument('-n', '--number', type=int, help='Number of posts to collect')
+    parser.add_argument('-o', '--output', type=str, 
+                       default=f"bluesky_posts_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl",
+                       help='Output file path (default: bluesky_posts_TIMESTAMP.jsonl)')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                       help='Print each post as it is collected')
+
+    args = parser.parse_args()
+    
+    archiver = FirehoseScraper(output_file=args.output, verbose=args.verbose)
+    archiver.start_collection(duration_seconds=args.time, post_limit=args.number)
