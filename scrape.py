@@ -86,14 +86,8 @@ class FirehoseScraper:
             print(f"Saved post by @{post_data['author']}: {post_data['text'][:50]}...")
 
     def start_collection(self, duration_seconds=None, post_limit=None):
-        """Start collecting posts until duration or post limit is reached"""
-        if duration_seconds:
-            print(f"Starting collection for {duration_seconds} seconds...")
-        elif post_limit:
-            print(f"Starting collection for {post_limit} posts...")
-        else:
-            print("Starting unlimited collection (Ctrl+C to stop)...")
-            
+        """Start collecting posts from the firehose"""
+        print(f"Starting collection{f' for {post_limit} posts' if post_limit else ''}...")
         self.start_time = time.time()
         end_time = self.start_time + duration_seconds if duration_seconds else None
 
@@ -105,11 +99,30 @@ class FirehoseScraper:
             else:
                 self.process_message(message)
 
-        try:
-            self.client.start(message_handler)
-        except KeyboardInterrupt:
-            print("\nCollection stopped by user.")
-            self._stop_collection()
+        max_retries = 3
+        retry_delay = 5  # seconds
+        retry_count = 0
+
+        while retry_count < max_retries:
+            try:
+                self.client.start(message_handler)
+                break  # If successful, break the retry loop
+            except Exception as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    print(f"\nFatal error after {max_retries} retries: {str(e)}")
+                    self._stop_collection()
+                    break
+                
+                print(f"\nConnection error (attempt {retry_count}/{max_retries}): {str(e)}")
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                # Increase delay for next retry
+                retry_delay *= 2
+            except KeyboardInterrupt:
+                print("\nCollection stopped by user.")
+                self._stop_collection()
+                break
 
     def _stop_collection(self):
         """Stop the collection and print summary"""
