@@ -99,26 +99,16 @@ class FirehoseScraper:
             else:
                 self.process_message(message)
 
-        max_retries = 3
-        retry_delay = 5  # seconds
-        retry_count = 0
 
-        while retry_count < max_retries:
+
+        while True:
             try:
                 self.client.start(message_handler)
-                break  # If successful, break the retry loop
-            except Exception as e:
-                retry_count += 1
-                if retry_count >= max_retries:
-                    print(f"\nFatal error after {max_retries} retries: {str(e)}")
-                    self._stop_collection()
-                    break
                 
-                print(f"\nConnection error (attempt {retry_count}/{max_retries}): {str(e)}")
-                print(f"Retrying in {retry_delay} seconds...")
-                time.sleep(retry_delay)
-                # Increase delay for next retry
-                retry_delay *= 2
+            except Exception as e:
+                error_details = f"{type(e).__name__}: {str(e)}" if str(e) else f"{type(e).__name__}"
+                print(f"\nConnection error: {error_details}")
+
             except KeyboardInterrupt:
                 print("\nCollection stopped by user.")
                 self._stop_collection()
