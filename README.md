@@ -11,7 +11,7 @@ This is a Python script that collects posts from the Bluesky firehose and saves 
 ## Requirements
 
 - Python >=3.11,<3.14
-- [Poetry](https://python-poetry.org/) for dependency management
+- [Rye](https://rye.astral.sh/) for dependency management
 
 ## Setup
 
@@ -24,20 +24,20 @@ This is a Python script that collects posts from the Bluesky firehose and saves 
 
 2. **Install dependencies:**
 
-   Use Poetry to install the required packages:
+   Use Rye to install the required packages:
 
    ```bash
-   poetry install
+   rye sync
    ```
 
 ## Usage
 
 1. **Run the script:**
 
-   You can start collecting posts by running the script with Poetry:
+   You can start collecting posts by running the script with Rye:
 
    ```bash
-   poetry run python scrape.py
+   rye run python scrape.py
    ```
 
    By default, the script collects posts for 30 seconds. You can adjust the duration by modifying the `duration_seconds` parameter in the `start_collection` method.
